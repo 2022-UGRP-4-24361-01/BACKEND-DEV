@@ -1,44 +1,34 @@
-# from django.shortcuts import render
-# from rest_framework.views import APIView
-from rest_framework.response import Response
-# from django.http import Http404
-from rest_framework import status
-from .calSerializers import CalSerializer
+from sys import implementation
+from rest_framework import viewsets, permissions
+from .calSerializers import BasicCalSerializer, FullCalSerializer
 from .models import Cal
-from rest_framework import viewsets
-from django.shortcuts import get_object_or_404 #, get_list_or_404
 
-class calViewSet(viewsets.ViewSet):
-    def list(self, request):
-        queryset = Cal.objects.all()
-        serializer = CalSerializer(queryset, many=True)
-        return Response(serializer.data)
+class IsAuthorizedToRead(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if obj.owner_class == Cal.ROOM:
+            ### need to implement
+            return True
+        return obj.owner == request.user
 
-    def create(self, request):
-        serializer = CalSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
-    def retrieve(self, request, pk=None):
-        queryset = Cal.objects.all()
-        cal = get_object_or_404(queryset, pk=pk)
-        serializer = CalSerializer(cal)
-        return Response(serializer.data)
+class IsOwnerOrReadOnly(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return obj.owner == request.user
 
-    def update(self, request, pk=None, partial=False):
-        queryset = Cal.objects.all()
-        cal = get_object_or_404(queryset, pk=pk)
-        serializer = CalSerializer(cal, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
-        
-    def partial_update(self, request, pk=None):
-        self.update(request, pk, partial=True)
+class CalendarView(viewsets.ModelViewSet):
+    queryset = Cal.objects.all()
+    
+    def get_permissions(self):
+        if self.action in ('list', 'retrive', 'update'):
+            if self.action == 'list':
+                raise NotImplementedError()
+            permission_classes = ['IsAuthorizedToRead&IsOwnerOrReadOnly'] ### ['~|IsAdmin']
+        else:
+            permission_classes = ['IsAdmin']
+        return [permission() for permission in permission_classes]
 
-    def destroy(self, request, pk=None):
-        queryset = Cal.objects.all()
-        cal = get_object_or_404(queryset, pk=pk)
-        cal.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def get_serializer_class(self):
+        if self.request.user.is_superuser:
+            return FullCalSerializer
+        return BasicCalSerializer

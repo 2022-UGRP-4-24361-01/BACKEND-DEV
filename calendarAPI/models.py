@@ -1,12 +1,23 @@
 from django.db import models
-
-# Create your models here.
-class Small(models.Model):
-    s1 = models.TextField()
-    s2 = models.TextField()
+import uuid
+from django.contrib.auth import get_user_model
 
 class Cal(models.Model):
-    s_id_asdf = models.ForeignKey("Small", related_name="small", on_delete=models.CASCADE, db_column="s_id")
-    var1 = models.TextField()
-    var2 = models.TextField()
-    var3 = models.TextField()
+    ROOM = 'R'
+    USER = 'U'
+    # PUBLIC = True
+    # PRIVATE = False
+    OWNER_CLASSES = [
+        (ROOM, 'Room'),
+        (USER, 'User')
+    ]
+    
+    id = models.AutoField(primary_key=True)  # DO NOT REVEAL TO CLIENT
+    uuid = models.UUIDField(unique=True, default=uuid.uuid4, editable=False)
+    owner = models.ForeignKey(get_user_model(), related_name='+', to_field='uuid', db_column='fk', editable=False, on_delete=models.CASCADE)
+    owner_class = models.CharField(max_length=1, choices=OWNER_CLASSES, editable=False)
+    # policy = models.BooleanField(default=PUBLIC)
+    icalURL = models.URLField(max_length=200)
+
+    class Meta:
+        db_table = 'calendar'
