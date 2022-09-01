@@ -1,9 +1,16 @@
-from django.shortcuts import render
-from .serializers import UserSerializer
+from .serializers import FullUserSerializer, BasicUserSerializer
 from .models import User
 from rest_framework import viewsets
 
-# 회원가입
 class UserCreate(viewsets.ModelViewSet):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
+    lookup_field = 'uuid'
+
+    def get_serializer_class(self):
+        if self.request.user.is_staff:
+            return FullUserSerializer
+        return BasicUserSerializer
+
+    # def get_permissions(self):
+    #     pass
+   

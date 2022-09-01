@@ -11,7 +11,7 @@ class UserTest(TestCase):
         )
         self.assertEqual(user.email, 'coninggu@example.com')
         self.assertEqual(user.username, 'coninggu')
-        self.assertFalse(user.is_admin)
+        self.assertFalse(user.is_staff)
         self.assertTrue(user.is_active)
 
     def test_create_superuser(self):
@@ -22,5 +22,5 @@ class UserTest(TestCase):
         )
         self.assertEqual(user.email, 'superuser@example.com')
         self.assertEqual(user.username, 'superuser')
-        self.assertTrue(user.is_admin)
+        self.assertTrue(user.is_staff)
         self.assertTrue(user.is_active)

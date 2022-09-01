@@ -1,17 +1,15 @@
-from rest_framework import serializers
-from .models import Cal
-from account.serializers import UserSerializer
+from rest_framework import serializers, validators
+from .models import Cal, CalPermissionTable
 
+
+# Calendar Serializers
 class BaseCalSerializer(serializers.ModelSerializer):
-    # id = serializers.IntegerField()
-    # uuid = serializers.UUIDField(format='hex_verbose')
-    # owner = UserSerializer(read_only=True, default=serializers.CurrentUserDefault())
-    # owner = serializers.ModelSerializer(read_only=True, default=serializers.CurrentUserDefault()) ## may not operate
-    # icalURL = serializers.URLField(max_length=200, min_length=None, allow_blank=False)
     class Meta:
         abstract = True
         model = Cal
         lookup_field = 'uuid'
+        validators = [
+            validators.UniqueTogetherValidator(queryset=Cal.objects.all(), fields=['owner'])]
 
 class FullCalSerializer(BaseCalSerializer):
     class Meta(BaseCalSerializer.Meta):
@@ -19,7 +17,8 @@ class FullCalSerializer(BaseCalSerializer):
             'id',
             'uuid',
             'owner',
-            'icalURL'
+            'owner_class',
+            'icalURL',
         ]
 
 class BasicCalSerializer(BaseCalSerializer):
@@ -27,7 +26,26 @@ class BasicCalSerializer(BaseCalSerializer):
         fields = [
             'uuid',
             'owner',
-            'icalURL'
+            'owner_class',
+            'icalURL',
         ]
         extra_kwargs = {
-            'owner': {'read_only': True, 'default': serializers.CurrentUserDefault()}}
+            'owner': {
+                'default': serializers.CreateOnlyDefault(serializers.CurrentUserDefault()),
+        }}
+
+
+# Permission table Serializer
+class CalPermissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CalPermissionTable
+        fields = [
+            'cal_uuid',
+            'user_uuid',
+        ]
+        validators = [
+            validators.UniqueTogetherValidator(
+                queryset=CalPermissionTable.objects.all(),
+                fields=['cal_uuid', 'user_uuid']
+            )
+        ]

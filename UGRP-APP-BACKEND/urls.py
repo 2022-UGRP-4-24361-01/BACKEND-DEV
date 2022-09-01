@@ -20,4 +20,5 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls')),
     path('', include('account.urls')),
     path('', include('calendarAPI.urls')),
+    # path('', include('myauth.urls')),
 ]
